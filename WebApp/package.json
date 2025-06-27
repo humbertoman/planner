@@ -4,13 +4,8 @@
   "description": "Sistema de Planejamento de Aulas para Educadores",
   "main": "index.js",
   "scripts": {
-    "start": "react-scripts start",
-    "build": "vite build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "dev": "vite",
-    "build-vite": "vite build",
-    "vercel-build": "npm install && npm run build",
+    "build": "chmod +x ./node_modules/.bin/vite && vite build",
     "serve": "vite preview"
   },
   "keywords": [
