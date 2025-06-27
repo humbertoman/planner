@@ -12,7 +12,6 @@ import {
     collection, query, where, onSnapshot, addDoc, doc, deleteDoc, updateDoc, serverTimestamp 
 } from 'firebase/firestore';
 
-// --- Componentes Internos (Completos e Corrigidos) ---
 const ResourceAutocomplete = ({ value, onChange, resources, placeholder }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredResources, setFilteredResources] = useState([]);
@@ -122,7 +121,6 @@ const FolderComponent = ({ folder, components, onRename, onDelete, children }) =
   );
 };
 
-// --- Componente Principal ---
 const PlannerEdu = ({ user }) => { 
   const [folders, setFolders] = useState([]); const [components, setComponents] = useState([]); const [lessons, setLessons] = useState([]); const [resources, setResources] = useState([]); const [evaluations, setEvaluations] = useState([]);
   const [activeTab, setActiveTab] = useState('components'); const [selectedComponent, setSelectedComponent] = useState(null); const [isCompactView, setIsCompactView] = useState(false); const [showCalendar, setShowCalendar] = useState(false); const [searchTerm, setSearchTerm] = useState(''); const [filterFolder, setFilterFolder] = useState('all');
@@ -224,7 +222,6 @@ const PlannerEdu = ({ user }) => {
           </div>
         </div>
       </header>
-
       <div className="flex-1 flex overflow-hidden">
         <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
           <nav className="p-4"><div className="space-y-2">
@@ -243,7 +240,6 @@ const PlannerEdu = ({ user }) => {
             </div>
           </div></div>
         </div>
-
         <main className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white border-b border-gray-200 px-6 py-4">
             <div className="flex items-center justify-between">
@@ -253,57 +249,33 @@ const PlannerEdu = ({ user }) => {
                   {activeTab === 'resources' && 'Biblioteca de Recursos'} {activeTab === 'evaluations' && 'Sistema de Avaliações'}
                 </h2>
                 <p className="text-gray-600 text-sm mt-1">
-                  {activeTab === 'components' && 'Gerencie seus componentes curriculares e organize por pastas'} {activeTab === 'lessons' && 'Planeje e acompanhe suas aulas detalhadamente'}
-                  {activeTab === 'resources' && 'Organize materiais e recursos didáticos'} {activeTab === 'evaluations' && 'Controle atividades avaliativas e critérios'}
+                  {activeTab === 'components' && 'Gerencie seus componentes curriculares'} {activeTab === 'lessons' && 'Planeje suas aulas'}
+                  {activeTab === 'resources' && 'Organize seus materiais'} {activeTab === 'evaluations' && 'Controle suas avaliações'}
                 </p>
               </div>
               <div className="flex items-center gap-3">
-                {activeTab === 'components' && (<>
-                    <button onClick={() => setShowFolderForm(true)} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"><FolderPlus className="w-4 h-4" />Nova Pasta</button>
-                    <button onClick={() => setShowComponentForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Novo Componente</button>
-                </>)}
+                {activeTab === 'components' && (<><button onClick={() => setShowFolderForm(true)} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"><FolderPlus className="w-4 h-4" />Nova Pasta</button><button onClick={() => setShowComponentForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Novo Componente</button></>)}
                 {activeTab === 'lessons' && (<button onClick={() => setShowLessonForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Nova Aula</button>)}
                 {activeTab === 'resources' && (<button onClick={() => setShowResourceForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Novo Recurso</button>)}
                 {activeTab === 'evaluations' && (<button onClick={() => setShowEvaluationForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Nova Avaliação</button>)}
               </div>
             </div>
-            {activeTab === 'components' && (
-              <div className="flex items-center gap-4 mt-4">
-                <div className="flex-1 relative">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                  <input type="text" placeholder="Buscar componentes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4 text-gray-400" />
-                  <select value={filterFolder} onChange={(e) => setFilterFolder(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                    <option value="all">Todas as pastas</option>
-                    {folders.map(folder => (<option key={folder.id} value={folder.id}>{folder.name}</option>))}
-                    <option value="">Sem pasta</option>
-                  </select>
-                </div>
-              </div>
-            )}
+            {activeTab === 'components' && (<div className="flex items-center gap-4 mt-4"><div className="flex-1 relative"><Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" /><input type="text" placeholder="Buscar componentes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg"/></div><div className="flex items-center gap-2"><Filter className="w-4 h-4 text-gray-400" /><select value={filterFolder} onChange={(e) => setFilterFolder(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2"><option value="all">Todas as pastas</option>{folders.map(folder => (<option key={folder.id} value={folder.id}>{folder.name}</option>))} <option value="">Sem pasta</option></select></div></div>)}
           </div>
           <div className="flex-1 overflow-auto p-6">
-            {activeTab === 'components' && (<div>{/* Código para renderizar componentes */}</div>)}
-            {activeTab === 'lessons' && (<div>{/* Código para renderizar aulas */}</div>)}
-            {activeTab === 'resources' && (<div>{/* Código para renderizar recursos */}</div>)}
-            {activeTab === 'evaluations' && (<div>{/* Código para renderizar avaliações */}</div>)}
+            {/* O CONTEÚDO DAS ABAS VAI AQUI */}
           </div>
         </main>
       </div>
 
-        {/* --- INÍCIO: Formulários (Modals) --- */}
-        {showFolderForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"><h3 className="text-lg font-semibold mb-4">Nova Pasta</h3><div className="space-y-4"><div><label className="block text-sm font-medium text-gray-700 mb-1">Nome da Pasta</label><input type="text" value={folderForm.name} onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })} className="w-full p-3 border border-gray-200 rounded-lg" placeholder="Ex: Matemática Básica"/></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Descrição (opcional)</label><textarea value={folderForm.description} onChange={(e) => setFolderForm({ ...folderForm, description: e.target.value })} className="w-full p-3 border border-gray-200 rounded-lg resize-none" rows="3" placeholder="Descreva o objetivo desta pasta..."/></div></div><div className="flex gap-3 mt-6"><button onClick={() => setShowFolderForm(false)} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50">Cancelar</button><button onClick={createFolder} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Criar Pasta</button></div></div></div>)}
-        {showComponentForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto"><h3 className="text-lg font-semibold mb-4">Novo Componente Curricular</h3><div className="space-y-4">{/* ... (conteúdo do formulário de componente) ... */}</div><div className="flex gap-3 mt-6"><button onClick={() => setShowComponentForm(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createComponent} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Criar Componente</button></div></div></div>)}
-        {showLessonForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto"><h3 className="text-lg font-semibold mb-4">Planejar Nova Aula</h3><div className="space-y-4">{/* ... (conteúdo do formulário de aula) ... */}</div><div className="flex gap-3 mt-6"><button onClick={() => setShowLessonForm(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createLesson} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar Aula</button></div></div></div>)}
-        {showResourceForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"><h3 className="text-lg font-semibold mb-4">Novo Recurso</h3><div className="space-y-4">{/* ... (conteúdo do formulário de recurso) ... */}</div><div className="flex gap-3 mt-6"><button onClick={() => setShowResourceForm(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createResource} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar Recurso</button></div></div></div>)}
-        {showEvaluationForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"><h3 className="text-lg font-semibold mb-4">Nova Avaliação</h3><div className="space-y-4">{/* ... (conteúdo do formulário de avaliação) ... */}</div><div className="flex gap-3 mt-6"><button onClick={() => setShowEvaluationForm(false)} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createEvaluation} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar Avaliação</button></div></div></div>)}
-        <CalendarPicker selectedDates={componentForm.dates} onChange={(dates) => setComponentForm({ ...componentForm, dates })} isOpen={showCalendar} onClose={() => setShowCalendar(false)}/>
-        {/* --- FIM: Formulários (Modals) --- */}
-
+      {/* MODALS E FORMULÁRIOS COMPLETOS */}
+      {showFolderForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"><h3 className="text-lg font-semibold mb-4">Nova Pasta</h3><div className="space-y-4"><div><label className="block text-sm font-medium text-gray-700 mb-1">Nome da Pasta</label><input type="text" value={folderForm.name} onChange={(e) => setFolderForm({ ...folderForm, name: e.target.value })} className="w-full p-3 border border-gray-200 rounded-lg" placeholder="Ex: Matemática Básica"/></div><div><label className="block text-sm font-medium text-gray-700 mb-1">Descrição (opcional)</label><textarea value={folderForm.description} onChange={(e) => setFolderForm({ ...folderForm, description: e.target.value })} className="w-full p-3 border border-gray-200 rounded-lg resize-none" rows="3" placeholder="Descreva o objetivo desta pasta..."/></div></div><div className="flex gap-3 mt-6"><button onClick={() => {setShowFolderForm(false); resetFolderForm();}} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createFolder} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Criar Pasta</button></div></div></div>)}
+      {showComponentForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-screen overflow-y-auto"><h3 className="text-lg font-semibold mb-4">Novo Componente Curricular</h3><div className="space-y-4"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="block text-sm font-medium">Nome</label><input type="text" value={componentForm.name} onChange={(e) => setComponentForm({ ...componentForm, name: e.target.value })} className="w-full p-3 border rounded-lg" placeholder="Ex: Matemática Básica"/></div><div><label className="block text-sm font-medium">Carga Horária (h)</label><input type="number" value={componentForm.workload} onChange={(e) => setComponentForm({ ...componentForm, workload: e.target.value })} className="w-full p-3 border rounded-lg" placeholder="Ex: 60"/></div></div><div><label className="block text-sm font-medium">Pasta</label><select value={componentForm.folderId} onChange={(e) => setComponentForm({ ...componentForm, folderId: e.target.value })} className="w-full p-3 border rounded-lg"><option value="">Sem pasta</option>{folders.map(folder => (<option key={folder.id} value={folder.id}>{folder.name}</option>))}</select></div><div><label className="block text-sm font-medium">Descrição</label><textarea value={componentForm.description} onChange={(e) => setComponentForm({ ...componentForm, description: e.target.value })} className="w-full p-3 border rounded-lg" rows="3"/></div><div><label className="block text-sm font-medium">Dias de Aula</label><button onClick={() => setShowCalendar(true)} className="flex items-center gap-2 px-4 py-2 border rounded-lg"><Calendar className="w-4 h-4" />Selecionar Dias ({componentForm.dates.length})</button></div></div><div className="flex gap-3 mt-6"><button onClick={() => {setShowComponentForm(false); resetComponentForm();}} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createComponent} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Criar Componente</button></div></div></div>)}
+      {showLessonForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-screen overflow-y-auto"><h3 className="text-lg font-semibold mb-4">Planejar Nova Aula</h3><div className="space-y-4"><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label className="block text-sm font-medium">Componente</label><select value={lessonForm.componentId} onChange={(e) => setLessonForm({ ...lessonForm, componentId: e.target.value })} className="w-full p-3 border rounded-lg"><option value="">Selecione um componente</option>{components.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div><div><label className="block text-sm font-medium">Data</label><input type="date" value={lessonForm.date} onChange={(e) => setLessonForm({ ...lessonForm, date: e.target.value })} className="w-full p-3 border rounded-lg"/></div></div><div><label className="block text-sm font-medium">Título da Aula</label><input type="text" value={lessonForm.title} onChange={(e) => setLessonForm({ ...lessonForm, title: e.target.value })} className="w-full p-3 border rounded-lg"/></div><div><label className="block text-sm font-medium">Sequência Didática</label><ResourceAutocomplete value={lessonForm.didacticSequence} onChange={(value) => setLessonForm({ ...lessonForm, didacticSequence: value })} resources={resources} placeholder="Descreva a sequência..."/></div></div><div className="flex gap-3 mt-6"><button onClick={() => {setShowLessonForm(false); resetLessonForm();}} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createLesson} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar Aula</button></div></div></div>)}
+      {showResourceForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"><h3 className="text-lg font-semibold mb-4">Novo Recurso</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Nome</label><input type="text" value={resourceForm.name} onChange={(e) => setResourceForm({ ...resourceForm, name: e.target.value })} className="w-full p-3 border rounded-lg"/></div><div><label className="block text-sm font-medium">Tipo</label><select value={resourceForm.type} onChange={(e) => setResourceForm({ ...resourceForm, type: e.target.value })} className="w-full p-3 border rounded-lg"><option value="material">Material</option><option value="video">Vídeo</option><option value="link">Link</option></select></div></div><div className="flex gap-3 mt-6"><button onClick={() => {setShowResourceForm(false); resetResourceForm();}} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createResource} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar Recurso</button></div></div></div>)}
+      {showEvaluationForm && (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"><div className="bg-white p-6 rounded-lg shadow-xl max-w-md w-full mx-4"><h3 className="text-lg font-semibold mb-4">Nova Avaliação</h3><div className="space-y-4"><div><label className="block text-sm font-medium">Componente</label><select value={evaluationForm.componentId} onChange={(e) => setEvaluationForm({ ...evaluationForm, componentId: e.target.value })} className="w-full p-3 border rounded-lg"><option value="">Selecione um componente</option>{components.map(c => (<option key={c.id} value={c.id}>{c.name}</option>))}</select></div><div><label className="block text-sm font-medium">Nome</label><input type="text" value={evaluationForm.name} onChange={(e) => setEvaluationForm({ ...evaluationForm, name: e.target.value })} className="w-full p-3 border rounded-lg"/></div></div><div className="flex gap-3 mt-6"><button onClick={() => {setShowEvaluationForm(false); resetEvaluationForm();}} className="flex-1 px-4 py-2 border rounded-lg">Cancelar</button><button onClick={createEvaluation} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg">Salvar Avaliação</button></div></div></div>)}
+      <CalendarPicker selectedDates={componentForm.dates} onChange={(dates) => setComponentForm({ ...componentForm, dates })} isOpen={showCalendar} onClose={() => setShowCalendar(false)}/>
     </div>
   );
 };
-
 export default PlannerEdu;
