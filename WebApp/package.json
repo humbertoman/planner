@@ -10,6 +10,7 @@
     "eject": "react-scripts eject",
     "dev": "vite",
     "build-vite": "vite build",
+    "vercel-build": "npm install && npm run build",
     "serve": "vite preview"
   },
   "keywords": [
