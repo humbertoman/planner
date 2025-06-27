@@ -6,16 +6,15 @@ import {
   AlertCircle, Info, LogOut
 } from 'lucide-react';
 
-// --- INÍCIO: NOVAS IMPORTAÇÕES DO FIREBASE ---
+// --- Importações do Firebase ---
 import { auth, db } from './firebase';
 import { signOut } from 'firebase/auth';
 import { 
     collection, query, where, onSnapshot, addDoc, doc, deleteDoc, updateDoc, serverTimestamp 
 } from 'firebase/firestore';
-// --- FIM: NOVAS IMPORTAÇÕES DO FIREBASE ---
 
 
-// --- INÍCIO: SEUS COMPONENTES INTERNOS ORIGINAIS (MANTIDOS) ---
+// --- Componentes Internos (Completos e Corrigidos) ---
 const ResourceAutocomplete = ({ value, onChange, resources, placeholder }) => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [filteredResources, setFilteredResources] = useState([]);
@@ -89,12 +88,12 @@ const CalendarPicker = ({ selectedDates, onChange, isOpen, onClose }) => {
     return days;
   };
 
-  const isDateSelected = (date) => selectedDates.some(selected => selected.toDateString() === date.toDateString());
+  const isDateSelected = (date) => selectedDates.some(selected => new Date(selected).toDateString() === date.toDateString());
 
   const toggleDate = (date) => {
     const isSelected = isDateSelected(date);
     if (isSelected) {
-      onChange(selectedDates.filter(selected => selected.toDateString() !== date.toDateString()));
+      onChange(selectedDates.filter(selected => new Date(selected).toDateString() !== date.toDateString()));
     } else {
       onChange([...selectedDates, date]);
     }
@@ -166,4 +165,248 @@ const FolderComponent = ({ folder, components, onRename, onDelete, children }) =
           <span className="text-sm text-gray-500">{componentsInFolder.length} componente{componentsInFolder.length !== 1 ? 's' : ''}</span>
           {!isEditing && (
             <>
-              <button onClick={() => setIsEditing(true)} className="text-gray-500 hover:text-gray-
+              <button onClick={() => setIsEditing(true)} className="text-gray-500 hover:text-gray-700 p-1"><Edit3 className="w-4 h-4" /></button>
+              <button onClick={() => onDelete(folder.id)} className="text-red-500 hover:text-red-700 p-1" disabled={componentsInFolder.length > 0}><Trash2 className="w-4 h-4" /></button>
+            </>
+          )}
+        </div>
+      </div>
+      {isExpanded && <div className="p-4">{children}</div>}
+    </div>
+  );
+};
+
+// --- Componente Principal ---
+const PlannerEdu = ({ user }) => { 
+  
+  const [folders, setFolders] = useState([]);
+  const [components, setComponents] = useState([]);
+  const [lessons, setLessons] = useState([]);
+  const [resources, setResources] = useState([]);
+  const [evaluations, setEvaluations] = useState([]);
+  const [activeTab, setActiveTab] = useState('components');
+  const [selectedComponent, setSelectedComponent] = useState(null);
+  const [isCompactView, setIsCompactView] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterFolder, setFilterFolder] = useState('all');
+  const [showComponentForm, setShowComponentForm] = useState(false);
+  const [showLessonForm, setShowLessonForm] = useState(false);
+  const [showResourceForm, setShowResourceForm] = useState(false);
+  const [showEvaluationForm, setShowEvaluationForm] = useState(false);
+  const [showFolderForm, setShowFolderForm] = useState(false);
+  const [componentForm, setComponentForm] = useState({ name: '', description: '', workload: '', folderId: '', expectedResults: '', topics: '', dates: [] });
+  const [lessonForm, setLessonForm] = useState({ componentId: '', date: '', title: '', objectives: '', didacticSequence: '', resources: '', methodology: '', duration: '', evaluation: '', isNonPresential: false });
+  const [resourceForm, setResourceForm] = useState({ name: '', type: 'material', description: '', link: '' });
+  const [evaluationForm, setEvaluationForm] = useState({ componentId: '', name: '', type: 'prova', date: '', weight: '', description: '' });
+  const [folderForm, setFolderForm] = useState({ name: '', description: '' });
+
+  useEffect(() => {
+    if (!user) return;
+    const createSubscription = (collectionName, setState) => {
+      const q = query(collection(db, collectionName), where("userId", "==", user.uid));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const items = [];
+        querySnapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        setState(items);
+      });
+      return unsubscribe;
+    };
+    const unsubFolders = createSubscription('folders', setFolders);
+    const unsubComponents = createSubscription('components', setComponents);
+    const unsubLessons = createSubscription('lessons', setLessons);
+    const unsubResources = createSubscription('resources', setResources);
+    const unsubEvaluations = createSubscription('evaluations', setEvaluations);
+    return () => { unsubFolders(); unsubComponents(); unsubLessons(); unsubResources(); unsubEvaluations(); };
+  }, [user]);
+
+  const handleLogout = () => signOut(auth);
+  const resetComponentForm = () => setComponentForm({ name: '', description: '', workload: '', folderId: '', expectedResults: '', topics: '', dates: [] });
+  const resetLessonForm = () => setLessonForm({ componentId: '', date: '', title: '', objectives: '', didacticSequence: '', resources: '', methodology: '', duration: '', evaluation: '', isNonPresential: false });
+  const resetResourceForm = () => setResourceForm({ name: '', type: 'material', description: '', link: '' });
+  const resetEvaluationForm = () => setEvaluationForm({ componentId: '', name: '', type: 'prova', date: '', weight: '', description: '' });
+  const resetFolderForm = () => setFolderForm({ name: '', description: '' });
+  const createFolder = async () => { if (folderForm.name.trim()) { await addDoc(collection(db, "folders"), { ...folderForm, createdAt: serverTimestamp(), userId: user.uid }); setShowFolderForm(false); resetFolderForm(); }};
+  const renameFolder = async (folderId, newName) => { await updateDoc(doc(db, "folders", folderId), { name: newName }); };
+  const deleteFolder = async (folderId) => { if (components.some(c => c.folderId === folderId)) { alert("Não é possível deletar pastas com componentes."); return; } await deleteDoc(doc(db, "folders", folderId)); };
+  const createComponent = async () => { if (componentForm.name.trim()) { await addDoc(collection(db, "components"), { ...componentForm, workload: parseInt(componentForm.workload) || 0, createdAt: serverTimestamp(), userId: user.uid }); setShowComponentForm(false); resetComponentForm(); }};
+  const deleteComponent = async (componentId) => { await deleteDoc(doc(db, "components", componentId)); };
+  const createLesson = async () => { if (lessonForm.title.trim() && lessonForm.componentId) { await addDoc(collection(db, "lessons"), { ...lessonForm, duration: parseInt(lessonForm.duration) || 0, createdAt: serverTimestamp(), userId: user.uid }); setShowLessonForm(false); resetLessonForm(); }};
+  const deleteLesson = async (lessonId) => await deleteDoc(doc(db, "lessons", lessonId));
+  const createResource = async () => { if (resourceForm.name.trim()) { await addDoc(collection(db, "resources"), { ...resourceForm, createdAt: serverTimestamp(), userId: user.uid }); setShowResourceForm(false); resetResourceForm(); }};
+  const deleteResource = async (resourceId) => await deleteDoc(doc(db, "resources", resourceId));
+  const createEvaluation = async () => { if (evaluationForm.name.trim() && evaluationForm.componentId) { await addDoc(collection(db, "evaluations"), { ...evaluationForm, weight: parseFloat(evaluationForm.weight) || 0, createdAt: serverTimestamp(), userId: user.uid }); setShowEvaluationForm(false); resetEvaluationForm(); }};
+  const deleteEvaluation = async (evaluationId) => await deleteDoc(doc(db, "evaluations", evaluationId));
+  
+  const getComponentProgress = (componentId) => {
+    const component = components.find(comp => comp.id === componentId);
+    if (!component) return { completed: 0, total: 0, percentage: 0 };
+    const componentLessons = lessons.filter(lesson => lesson.componentId === componentId);
+    const completedHours = componentLessons.reduce((total, lesson) => total + lesson.duration, 0);
+    const totalHours = component.workload * 60;
+    const percentage = totalHours > 0 ? (completedHours / totalHours) * 100 : 0;
+    return { completed: completedHours, total: totalHours, percentage: Math.min(percentage, 100) };
+  };
+
+  const getFilteredComponents = () => {
+    let filtered = components;
+    if (searchTerm) { filtered = filtered.filter(comp => comp.name.toLowerCase().includes(searchTerm.toLowerCase()) || (comp.description && comp.description.toLowerCase().includes(searchTerm.toLowerCase()))); }
+    if (filterFolder !== 'all') { filtered = filtered.filter(comp => comp.folderId === filterFolder); }
+    return filtered;
+  };
+
+  const getComponentsByFolder = () => {
+    const filtered = getFilteredComponents();
+    const foldersMap = new Map();
+    const noFolderComponents = [];
+    filtered.forEach(component => {
+      if (component.folderId) {
+        if (!foldersMap.has(component.folderId)) { foldersMap.set(component.folderId, []); }
+        foldersMap.get(component.folderId).push(component);
+      } else {
+        noFolderComponents.push(component);
+      }
+    });
+    return { foldersMap, noFolderComponents };
+  };
+  
+  const renderComponentCard = (component) => {
+    const progress = getComponentProgress(component.id);
+    const componentLessons = lessons.filter(lesson => lesson.componentId === component.id);
+    const componentEvaluations = evaluations.filter(evalItem => evalItem.componentId === component.id);
+    return (
+      <div key={component.id} onClick={() => setSelectedComponent(component)} className={`border border-gray-200 rounded-lg p-4 cursor-pointer transition-all ${selectedComponent?.id === component.id ? 'ring-2 ring-blue-500 bg-blue-50' : 'hover:shadow-md'} ${isCompactView ? 'mb-2' : 'mb-4'}`}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="w-5 h-5 text-blue-500" /><h3 className="font-semibold text-lg">{component.name}</h3>
+              {component.dates && component.dates.length > 0 && <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">{component.dates.length} dias</span>}
+            </div>
+            {!isCompactView && (
+              <>
+                {component.description && <p className="text-gray-600 text-sm mb-3">{component.description}</p>}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-3">
+                  <div className="text-center"><div className="text-sm text-gray-500">Carga Horária</div><div className="font-semibold text-blue-600">{component.workload}h</div></div>
+                  <div className="text-center"><div className="text-sm text-gray-500">Aulas</div><div className="font-semibold text-green-600">{componentLessons.length}</div></div>
+                  <div className="text-center"><div className="text-sm text-gray-500">Avaliações</div><div className="font-semibold text-orange-600">{componentEvaluations.length}</div></div>
+                  <div className="text-center"><div className="text-sm text-gray-500">Progresso</div><div className="font-semibold text-purple-600">{progress.percentage.toFixed(1)}%</div></div>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2"><div className="bg-blue-600 h-2 rounded-full transition-all" style={{ width: `${progress.percentage}%` }}></div></div>
+              </>
+            )}
+            {isCompactView && (<div className="flex items-center gap-4 text-sm text-gray-600"><span>{component.workload}h</span><span>{componentLessons.length} aulas</span><span>{progress.percentage.toFixed(1)}% concluído</span></div>)}
+          </div>
+          <div className="flex items-center gap-2 ml-4"><button onClick={(e) => { e.stopPropagation(); deleteComponent(component.id); }} className="text-red-500 hover:text-red-700 p-1"><Trash2 className="w-4 h-4" /></button></div>
+        </div>
+      </div>
+    );
+  };
+  
+  const formatDate = (date) => date ? new Date(date).toLocaleDateString('pt-BR') : '';
+  const formatTime = (minutes) => { const hours = Math.floor(minutes / 60); const mins = minutes % 60; return `${hours}h${mins.toString().padStart(2, '0')}min`; };
+
+  return (
+    <div className="h-screen bg-gray-50 flex flex-col">
+      <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center"><BookOpen className="w-5 h-5 text-white" /></div>
+            <h1 className="text-2xl font-bold text-gray-900">PlannerEdu</h1>
+          </div>
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsCompactView(!isCompactView)} className="flex items-center gap-2 px-3 py-2 text-gray-600 hover:text-gray-900 border border-gray-200 rounded-lg hover:bg-gray-50">
+              {isCompactView ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              <span className="text-sm">{isCompactView ? 'Detalhado' : 'Compacto'}</span>
+            </button>
+            <span className="text-sm text-gray-600 hidden sm:block">{user.email}</span>
+            <button onClick={handleLogout} className="flex items-center gap-2 px-3 py-2 text-red-600 hover:text-red-900 border border-gray-200 rounded-lg hover:bg-red-50">
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm">Sair</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex-1 flex overflow-hidden">
+        <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
+          <nav className="p-4"><div className="space-y-2">
+            {['components', 'lessons', 'resources', 'evaluations'].map(tab => (
+              <button key={tab} onClick={() => setActiveTab(tab)} className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors ${activeTab === tab ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-gray-700 hover:bg-gray-50'}`}>
+                {tab === 'components' && <BookOpen className="w-5 h-5" />}
+                {tab === 'lessons' && <FileText className="w-5 h-5" />}
+                {tab === 'resources' && <Link className="w-5 h-5" />}
+                {tab === 'evaluations' && <BarChart3 className="w-5 h-5" />}
+                <span className="capitalize">{tab === 'components' ? 'Componentes' : (tab === 'lessons' ? 'Aulas' : (tab === 'resources' ? 'Recursos' : 'Avaliações'))}</span>
+              </button>
+            ))}
+          </div></nav>
+          <div className="mt-auto p-4 border-t border-gray-200"><div className="bg-gray-50 rounded-lg p-3">
+            <h4 className="font-medium text-gray-900 mb-2">Resumo</h4>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between"><span className="text-gray-600">Componentes:</span><span className="font-medium">{components.length}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Aulas:</span><span className="font-medium">{lessons.length}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Recursos:</span><span className="font-medium">{resources.length}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Avaliações:</span><span className="font-medium">{evaluations.length}</span></div>
+            </div>
+          </div></div>
+        </div>
+
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="bg-white border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  {activeTab === 'components' && 'Componentes Curriculares'}
+                  {activeTab === 'lessons' && 'Planejamento de Aulas'}
+                  {activeTab === 'resources' && 'Biblioteca de Recursos'}
+                  {activeTab === 'evaluations' && 'Sistema de Avaliações'}
+                </h2>
+                <p className="text-gray-600 text-sm mt-1">
+                  {activeTab === 'components' && 'Gerencie seus componentes curriculares e organize por pastas'}
+                  {activeTab === 'lessons' && 'Planeje e acompanhe suas aulas detalhadamente'}
+                  {activeTab === 'resources' && 'Organize materiais e recursos didáticos'}
+                  {activeTab === 'evaluations' && 'Controle atividades avaliativas e critérios'}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                {activeTab === 'components' && (<>
+                    <button onClick={() => setShowFolderForm(true)} className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50"><FolderPlus className="w-4 h-4" />Nova Pasta</button>
+                    <button onClick={() => setShowComponentForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Novo Componente</button>
+                </>)}
+                {activeTab === 'lessons' && (<button onClick={() => setShowLessonForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Nova Aula</button>)}
+                {activeTab === 'resources' && (<button onClick={() => setShowResourceForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Novo Recurso</button>)}
+                {activeTab === 'evaluations' && (<button onClick={() => setShowEvaluationForm(true)} className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"><Plus className="w-4 h-4" />Nova Avaliação</button>)}
+              </div>
+            </div>
+            {activeTab === 'components' && (
+              <div className="flex items-center gap-4 mt-4">
+                <div className="flex-1 relative">
+                  <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
+                  <input type="text" placeholder="Buscar componentes..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-gray-400" />
+                  <select value={filterFolder} onChange={(e) => setFilterFolder(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    <option value="all">Todas as pastas</option>
+                    {folders.map(folder => (<option key={folder.id} value={folder.id}>{folder.name}</option>))}
+                    <option value="">Sem pasta</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="flex-1 overflow-auto p-6">
+            {activeTab === 'components' && (<div>{/* Conteúdo da aba Componentes */}</div>)}
+            {activeTab === 'lessons' && (<div>{/* Conteúdo da aba Aulas */}</div>)}
+            {activeTab === 'resources' && (<div>{/* Conteúdo da aba Recursos */}</div>)}
+            {activeTab === 'evaluations' && (<div>{/* Conteúdo da aba Avaliações */}</div>)}
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+};
+
+export default PlannerEdu;
